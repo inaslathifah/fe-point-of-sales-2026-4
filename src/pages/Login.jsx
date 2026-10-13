@@ -21,6 +21,7 @@ export default function Login() {
   };
   const [formData, setFormData] = useState(_initialForm);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleChange = (e) => {
     console.log(`input change ${e.target.name} = ${e.target.value}`);
@@ -32,14 +33,35 @@ export default function Login() {
     }));
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      // alert(`Login Successful!`);
+    try {
+      const res = await fetch("http://localhost:3000/api/auth/login", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      console.log(res);
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          result.message || "Please Check Your Email and Password",
+        );
+      }
+      localStorage.setItem("", result.data.token);
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    } catch (error) {
+      console.log(error.message);
+      setErrorMsg(error.message);
+    } finally {
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
   };
 
   return (
@@ -50,7 +72,8 @@ export default function Login() {
           <h1 className="text-2xl font-bold tracking-tight">
             Point of Sales | PPKDJP
           </h1>
-          <p className="text-sm text-muted ">Point of Sales</p>
+          <p className="text-sm text-black,
+          ">Point of Sales</p>
         </div>
 
         <Card className="shadow-lg border-border p-6">
@@ -59,6 +82,7 @@ export default function Login() {
               Sign in Your Account
             </CardTitle>
             <CardDescription>Enter your Credential</CardDescription>
+            {errorMsg && <p className="text-red-600">{errorMsg}</p>}
           </CardHeader>
 
           <form onSubmit={handleLogin}>

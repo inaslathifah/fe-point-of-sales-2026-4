@@ -1,8 +1,8 @@
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
+  // CardContent,
+  // CardDescription,
+  // CardFooter,
   CardHeader,
   CardTitle,
 } from "../component/ui/card";

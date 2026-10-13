@@ -39,7 +39,7 @@ export function AppSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
             A
           </div>
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold">My Workspace</span>
             <span className="text-xs text-muted-foreground">Pro Plan</span>
           </div>

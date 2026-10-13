@@ -1,7 +1,7 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
+  // DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -13,25 +13,21 @@ const AppModal = ({
   onclose,
   onSubmit,
   title,
-  Children,
+  children,
   submitLabel = "Save",
   cancelLabel = "Cancel",
   isLoading = false,
   // showFooter = true,
 }) => {
   return (
-    <Dialog open={show} openChange={onclose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={show} onOpenChange={onclose}>
+      <DialogContent className="max-w-[540px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit}>
-          <div className="py-2">{Children}</div>
+          <div className="py-2">{children}</div>
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Loading ..." : submitLabel}
