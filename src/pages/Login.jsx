@@ -12,6 +12,7 @@ import {
 import { Input } from "../component/ui/input";
 import { Label } from "@/component/ui/label";
 import { Button } from "@/component/ui/button";
+import api from "@/services/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -37,22 +38,10 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      console.log(res);
-      const result = await res.json();
-      if (!res.ok) {
-        throw new Error(
-          result.message || "Please Check Your Email and Password",
-        );
-      }
-      localStorage.setItem("", result.data.token);
+      const res = await api.post("/auth/login", formData);
+      console.log(res.data.token);
+      
+      localStorage.setItem("token", res.data.token);
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
@@ -72,8 +61,12 @@ export default function Login() {
           <h1 className="text-2xl font-bold tracking-tight">
             Point of Sales | PPKDJP
           </h1>
-          <p className="text-sm text-black,
-          ">Point of Sales</p>
+          <p
+            className="text-sm text-black,
+          "
+          >
+            Point of Sales
+          </p>
         </div>
 
         <Card className="shadow-lg border-border p-6">
