@@ -1,35 +1,10 @@
 import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  // CardDescription,
-  // CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/component/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Button } from "@/component/ui/button";
 import { Label } from "@/component/ui/label";
 import { Input } from "@/component/ui/input";
 import AppModal from "@/component/AppModal";
 import api from "@/services/api.js";
-
-// const dataUsers = [
-//   {
-//     id: 1,
-//     name: "John Doe",
-//     email: "john.doe@example.com",
-//   },
-//   {
-//     id: 2,
-//     name: "Jane Smith",
-//     email: "jane.smith@example.com",
-//   },
-//   {
-//     id: 3,
-//     name: "Bob Johnson",
-//     email: "bob.johnson@example.com",
-//   },
-// ];
 
 const ListUser = () => {
   const _initForm = {
@@ -43,6 +18,7 @@ const ListUser = () => {
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState(_initForm);
   const [isEdit, setIsEdit] = useState(false);
+
   const fetchUser = async () => {
     try {
       const response = await api.get("/user");
@@ -69,7 +45,13 @@ const ListUser = () => {
   const handleEditModal = (user) => {
     setShowModal(true);
     setIsEdit(true);
-    setFormData({ ...user, password: "" });
+    setFormData({
+      id: user.id,
+      name: user.name || "",
+      email: user.email || "",
+      password: "", // Kosongkan password saat edit agar opsional
+      is_active: user.is_active ?? 1,
+    });
   };
 
   const handleDelete = async (id) => {
@@ -77,7 +59,6 @@ const ListUser = () => {
     if (confirmation) {
       await api.delete(`/user/${id}`);
       fetchUser();
-      // setUsers(users.filter((u) => u.id !== id));
     }
   };
 
@@ -95,21 +76,24 @@ const ListUser = () => {
       const payload = {
         name: formData.name,
         email: formData.email,
-        password: formData.password,
         is_active: parseInt(formData.is_active),
       };
+
+      // Hanya sertakan password jika diisi (terutama berguna saat edit)
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+
       if (isEdit) {
         await api.put(`/user/${formData.id}`, payload);
       } else {
         await api.post("/user", payload);
       }
       setFormData(_initForm);
-    } catch (error) {
-      const errMsg = error.message;
-      console.log(errMsg);
-    } finally {
-      fetchUser();
       setShowModal(false);
+    } catch (error) {
+      const errMsg = error.response?.data?.message || error.message;
+      console.log(errMsg);
     }
   };
 
@@ -117,62 +101,54 @@ const ListUser = () => {
     <>
       <Card className="shadow-sm border-border p-6">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div className="">
+          <div>
             <CardTitle className="text-xl font-bold">Data User</CardTitle>
           </div>
           <Button
-            variant="primary"
             onClick={handleShowModal}
-            className="bg-blue-200"
+            className="bg-blue-600 text-white hover:bg-blue-700"
           >
             Create New User
           </Button>
         </CardHeader>
-        <CardContent className="p-0">
-          {/* <div className="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h4 className="mb-0 fw-bold">Data User</h4>
-            </div>
-          </div> */}
-          <table
-            striped
-            bordered
-            hover
-            responsive
-            className="w-full text-left text-sm align-middle mb-0"
-          >
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-left text-sm align-middle mb-0 border-collapse">
             <thead className="border-y bg-muted/30 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-6 py-3 font-medium">No</th>
                 <th className="px-6 py-3 font-medium">Nama</th>
                 <th className="px-6 py-3 font-medium">Email</th>
                 <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">Aksi</th>
+                <th className="px-6 py-3 font-medium text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {users.length > 0 ? (
                 users.map((user, index) => (
                   <tr
-                    key={index}
-                    className="hover:bg-gray-300/50 transition-colors"
+                    key={user.id || index}
+                    className="hover:bg-muted/50 transition-colors"
                   >
-                    <td className="px-4 py-6 whitespace-nowrap">{index + 1}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>
+                    <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
+                    <td className="px-6 py-4">{user.name}</td>
+                    <td className="px-6 py-4">{user.email}</td>
+                    <td className="px-6 py-4">
                       <span
-                        className={`border p-2 rounded-sm ${user.is_active === 1 ? "bg-slate-600" : "bg-red-300"} text-white `}
+                        className={`px-2.5 py-1 rounded-sm text-xs font-semibold ${
+                          Number(user.is_active) === 1
+                            ? "bg-slate-700 text-white"
+                            : "bg-red-200 text-red-800"
+                        }`}
                       >
-                        {user.is_active === 1 ? "Active" : "Inactive"}
+                        {Number(user.is_active) === 1 ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-4 py-6 text-right whitespace-nowrap">
+                    <td className="px-6 py-4 text-right whitespace-nowrap space-x-2">
                       <Button
                         onClick={() => handleEditModal(user)}
-                        variant="warning"
+                        variant="outline"
                         size="sm"
-                        className="rounded-md me-2 bg-yellow-100 text-orange-600"
+                        className="bg-amber-50 text-amber-700 hover:bg-amber-100"
                       >
                         Edit
                       </Button>
@@ -180,7 +156,6 @@ const ListUser = () => {
                         onClick={() => handleDelete(user.id)}
                         variant="destructive"
                         size="sm"
-                        className="rounded-md me-2"
                       >
                         Delete
                       </Button>
@@ -189,14 +164,16 @@ const ListUser = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="text-center py-4 text-muted">
+                  <td
+                    colSpan={5}
+                    className="text-center py-6 text-muted-foreground"
+                  >
                     Belum ada data user
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
-          {/* <div className="table-responsive"></div> */}
         </CardContent>
       </Card>
 
@@ -207,20 +184,20 @@ const ListUser = () => {
         onSubmit={handleSubmit}
         submitLabel={isEdit ? "Save Changes" : "Save"}
       >
-        <div className="space-y-4">
+        <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Enter Your Name"
+              placeholder="Enter user name"
             />
           </div>
           <div className="space-y-2">
-            <Label>Email</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               name="email"
@@ -228,43 +205,43 @@ const ListUser = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="Enter Your Email"
+              placeholder="Enter user email"
             />
           </div>
           <div className="space-y-2">
-            <Label>Password</Label>
+            <Label htmlFor="password">
+              Password{" "}
+              {isEdit && (
+                <span className="text-xs text-muted-foreground">
+                  (Kosongkan jika tidak ingin diubah)
+                </span>
+              )}
+            </Label>
             <Input
               id="password"
               name="password"
               type="password"
               value={formData.password}
               onChange={handleChange}
-              required={isEdit ? false : true}
-              placeholder="Enter Your Name"
+              required={!isEdit}
+              placeholder="Enter password"
             />
           </div>
 
-          {isEdit ? (
-            <div className="mb-3">
-              <label>Status</label>
-              <select
-                name="status"
-                value={String(formData.is_active)}
-                onValueChange={(val) =>
-                  setFormData({ ...formData, is_active: parseInt(val) })
-                }
-              >
-                <option value="1" id="active">
-                  Active
-                </option>
-                <option value="0" id="inactive">
-                  Inactive
-                </option>
-              </select>
-            </div>
-          ) : (
-            <div className="mb-3"></div>
-          )}
+          {/* Perbaikan pada pemilihan status menggunakan native HTML select dengan penanganan state handleChange */}
+          <div className="space-y-2">
+            <Label htmlFor="is_active">Status</Label>
+            <select
+              id="is_active"
+              name="is_active"
+              value={formData.is_active}
+              onChange={handleChange}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="Active">Active</option>
+              <option value="In-Active">In-Active</option>
+            </select>
+          </div>
         </div>
       </AppModal>
     </>

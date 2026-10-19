@@ -1,39 +1,27 @@
-import { useState } from "react";
-import { Card, Button, Form, Table, Modal } from "react-bootstrap";
-
-// Nanti bisa diganti dengan data dari Category.jsx / API
-const categoryOptions = ["Elektronik", "Pakaian", "Makanan"];
-
-const dataProducts = [
-  {
-    id: 1,
-    name: "Headphone Bluetooth",
-    category: "Elektronik",
-    price: 350000,
-    stock: 25,
-  },
-  {
-    id: 2,
-    name: "Kaos Polos",
-    category: "Pakaian",
-    price: 75000,
-    stock: 120,
-  },
-  {
-    id: 3,
-    name: "Keripik Singkong",
-    category: "Makanan",
-    price: 15000,
-    stock: 0,
-  },
-];
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/component/ui/select";
+import { Button } from "@/component/ui/button";
+import { Label } from "@/component/ui/label";
+import { Input } from "@/component/ui/input";
+import AppModal from "@/component/AppModal";
+import api from "@/services/api.js";
 
 const _initForm = {
   id: null,
   name: "",
-  category: "",
+  category_id: "",
   price: "",
   stock: "",
+  description: "",
+  is_active: "1", // Sesuaikan dengan tipe data status Anda (misal: "1" atau "0" / true atau false)
 };
 
 const formatRupiah = (value) =>
@@ -44,12 +32,38 @@ const formatRupiah = (value) =>
   }).format(value);
 
 const Product = () => {
-  const [products, setProducts] = useState(dataProducts);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState(_initForm);
   const [showModal, setShowModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
 
-  const handleCloseModal = () => setShowModal(false);
+  const fetchProducts = async () => {
+    try {
+      const response = await api.get("/product");
+      setProducts(response.data);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/category");
+      setCategories(response.data);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
 
   const handleShowModal = () => {
     setFormData(_initForm);
@@ -58,100 +72,140 @@ const Product = () => {
   };
 
   const handleEditModal = (product) => {
-    setFormData(product);
+    console.log(product);
+    setFormData({
+      id: product.id,
+      name: product.name || "",
+      category_id: product.category_id || product.category || "",
+      price: product.price || "",
+      stock: product.stock || "",
+      description: product.description || "",
+      is_active: product.is_active ?? product.status ?? "1",
+    });
     setIsEdit(true);
     setShowModal(true);
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // input number menghasilkan string, ubah ke number sebelum disimpan
-    const payload = {
+  // Handler khusus untuk Shadcn Select
+  const handleSelectChange = (field, value) => {
+    setFormData({
       ...formData,
-      price: Number(formData.price),
-      stock: Number(formData.stock),
-    };
-
-    if (isEdit) {
-      setProducts(products.map((p) => (p.id === payload.id ? payload : p)));
-    } else {
-      setProducts([...products, { ...payload, id: Date.now() }]);
-    }
-
-    setShowModal(false);
+      [field]: value,
+    });
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Yakin ingin menghapus produk ini?")) {
-      setProducts(products.filter((p) => p.id !== id));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: formData.name,
+        category_id: formData.category_id,
+        price: formData.price,
+        stock: formData.stock,
+        status: formData.status,
+        is_active: parseInt(formData.is_active),
+      };
+
+      if (isEdit) {
+        await api.put(`/product/${formData.id}`, payload);
+      } else {
+        await api.post("/product", payload);
+      }
+      setFormData(_initForm);
+      setShowModal(false);
+      fetchProducts();
+    } catch (error) {
+      const errMsg = error.response?.data?.message || error.message;
+      console.log(errMsg);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const confirmation = window.confirm(
+      "Are you sure want to delete this data?",
+    );
+    if (confirmation) {
+      await api.delete(`/product/${id}`);
+      fetchProducts();
     }
   };
 
   return (
     <>
       <Card className="shadow-sm p-3 border-0">
-        <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h4 className="mb-0 fw-bold">Data Product</h4>
-            <Button variant="primary" onClick={handleShowModal}>
-              Create New Product
-            </Button>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold">Data Product</CardTitle>
           </div>
-
-          <Table
-            striped
-            bordered
-            hover
-            responsive
-            className="align-middle mb-0"
+          <Button
+            onClick={handleShowModal}
+            className="bg-blue-600 text-white hover:bg-blue-700"
           >
+            Create New Product
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-left border-collapse align-middle mb-0">
             <thead>
-              <tr>
-                <th>No</th>
-                <th>Nama</th>
-                <th>Kategori</th>
-                <th>Harga</th>
-                <th>Stok</th>
-                <th>Aksi</th>
+              <tr className="border-b">
+                <th className="px-6 py-3 font-medium">No</th>
+                <th className="px-6 py-3 font-medium">Name</th>
+                <th className="px-6 py-3 font-medium">Category</th>
+                <th className="px-6 py-3 font-medium">Price</th>
+                <th className="px-6 py-3 font-medium">Stock</th>
+                <th className="px-6 py-3 font-medium">Status</th>
+                <th className="px-6 py-3 font-medium">Action</th>
               </tr>
             </thead>
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted">
+                  <td
+                    colSpan={7}
+                    className="text-center py-4 text-muted-foreground"
+                  >
                     Belum ada produk
                   </td>
                 </tr>
               ) : (
                 products.map((product, index) => (
-                  <tr key={product.id}>
-                    <td>{index + 1}</td>
-                    <td>{product.name}</td>
-                    <td>{product.category}</td>
-                    <td>{formatRupiah(product.price)}</td>
-                    <td className={product.stock === 0 ? "text-danger" : ""}>
-                      {product.stock === 0 ? "Habis" : product.stock}
+                  <tr key={product.id} className="border-b">
+                    <td className="px-6 py-3">{index + 1}</td>
+                    <td className="px-6 py-3">{product.name}</td>
+                    <td className="px-6 py-3">
+                      {product.category_name || product.category}
                     </td>
-                    <td>
+                    <td className="px-6 py-3">{formatRupiah(product.price)}</td>
+                    <td
+                      className={`px-6 py-3 ${Number(product.stock) === 0 ? "text-red-500 font-semibold" : ""}`}
+                    >
+                      {Number(product.stock) === 0 ? "Habis" : product.stock}
+                    </td>
+                    <td className="px-6 py-3">
+                      {String(product.is_active ?? product.status) === "1" ||
+                      product.is_active === true
+                        ? "Active"
+                        : "Inactive"}
+                    </td>
+                    <td className="px-6 py-3 space-x-2">
                       <Button
                         onClick={() => handleEditModal(product)}
-                        variant="warning"
+                        variant="outline"
                         size="sm"
-                        className="me-2"
                       >
                         Edit
                       </Button>
                       <Button
                         onClick={() => handleDelete(product.id)}
-                        variant="danger"
+                        variant="destructive"
                         size="sm"
                       >
                         Delete
@@ -161,80 +215,110 @@ const Product = () => {
                 ))
               )}
             </tbody>
-          </Table>
-        </Card.Body>
+          </table>
+        </CardContent>
       </Card>
 
-      <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {isEdit ? "Edit Product" : "Create New Product"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form id="productForm" onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="formProductName">
-              <Form.Label>Nama</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Masukkan nama produk"
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formProductCategory">
-              <Form.Label>Kategori</Form.Label>
-              <Form.Select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Pilih kategori</option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formProductPrice">
-              <Form.Label>Harga</Form.Label>
-              <Form.Control
-                type="number"
-                min="0"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="Masukkan harga"
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formProductStock">
-              <Form.Label>Stok</Form.Label>
-              <Form.Control
-                type="number"
-                min="0"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                placeholder="Masukkan jumlah stok"
-                required
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Close
-          </Button>
-          <Button type="submit" form="productForm" variant="primary">
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <AppModal
+        show={showModal}
+        onclose={handleCloseModal}
+        title={isEdit ? "Edit Product" : "Create New Product"}
+        onSubmit={handleSubmit}
+        submitLabel={isEdit ? "Save Changes" : "Save"}
+      >
+        <div className="space-y-4 py-2">
+          {/* Input Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              placeholder="Enter product name"
+            />
+          </div>
+
+          {/* Select Category */}
+          <div className="space-y-2">
+            <Label htmlFor="category_id">Category</Label>
+            <Select
+              value={formData.category_id ? String(formData.category_id) : ""}
+              onValueChange={(value) =>
+                handleSelectChange("category_id", value)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {categories.map((cat) => (
+                    <SelectItem
+                      key={cat.name || cat}
+                      value={String(cat.name || cat)}
+                    >
+                      {cat.name || cat}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Input Price */}
+          <div className="space-y-2">
+            <Label htmlFor="price">Price</Label>
+            <Input
+              id="price"
+              name="price"
+              type="number"
+              min="0"
+              value={formData.price}
+              onChange={handleChange}
+              required
+              placeholder="Enter price"
+            />
+          </div>
+
+          {/* Input Stock */}
+          <div className="space-y-2">
+            <Label htmlFor="stock">Stock</Label>
+            <Input
+              id="stock"
+              name="stock"
+              type="number"
+              min="0"
+              value={formData.stock}
+              onChange={handleChange}
+              required
+              placeholder="Enter stock quantity"
+            />
+          </div>
+
+          {/* Select Status */}
+          <div className="space-y-2">
+            <Label htmlFor="is_active">Status</Label>
+            <Select
+              id="is_active"
+              name="is_active"
+              value={String(formData.is_active)}
+              onValueChange={(value) => handleSelectChange("is_active", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="In-Active">In-Active</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </AppModal>
     </>
   );
 };
