@@ -12,26 +12,11 @@ import { Label } from "@/component/ui/label";
 import { Input } from "@/component/ui/input";
 import AppModal from "@/component/AppModal";
 import api from "@/services/api.js";
+import { useNavigate } from "react-router-dom";
 
-// const datatransactions = [
-//   {
-//     id: 1,
-//     name: "John Doe",
-//     email: "john.doe@example.com",
-//   },
-//   {
-//     id: 2,
-//     name: "Jane Smith",
-//     email: "jane.smith@example.com",
-//   },
-//   {
-//     id: 3,
-//     name: "Bob Johnson",
-//     email: "bob.johnson@example.com",
-//   },
-// ];
 
 const ListTransaction = () => {
+  const navigate = useNavigate();
   const _initForm = {
     id: null,
     name: "",
@@ -122,12 +107,8 @@ const ListTransaction = () => {
               Data Transaction
             </CardTitle>
           </div>
-          <Button
-            variant="primary"
-            onClick={handleShowModal}
-            className="bg-blue-200"
-          >
-            Transactions
+          <Button onClick={() => navigate("/transaction/create")}>
+            Create New Transaction
           </Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -178,7 +159,7 @@ const ListTransaction = () => {
                       </span>
                     </td> */}
 
-                    <td className="px-4 py-6 text-right whitespace-nowrap">
+                    <td className="px-4 py-6 whitespace-nowrap">
                       <Button
                         onClick={() => handleEditModal(user)}
                         variant="warning"

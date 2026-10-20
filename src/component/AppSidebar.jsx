@@ -1,12 +1,14 @@
 import {
   Home,
-  Inbox,
-  Calendar,
+  FileArchive,
+  File,
   Search,
   Settings,
   User2,
   Users,
   ChevronUp,
+  LogOut,
+  ShoppingBasket,
 } from "lucide-react";
 
 import {
@@ -22,13 +24,15 @@ import {
   SidebarMenuItem,
 } from "@/component/ui/sidebar";
 
+import { Link } from "react-router-dom";
+
 // Menu navigasi utama
 const items = [
   { title: "Home", url: "#", icon: Home },
-  { title: "Inbox", url: "#", icon: Inbox },
-  { title: "Calendar", url: "#", icon: Calendar },
+  { title: "Order", url: "/transaction", icon: ShoppingBasket },
+  { title: "Product", url: "/products", icon: FileArchive },
+  { title: "Category", url: "/category", icon: File },
   { title: "Users", url: "/users", icon: Users },
-  { title: "Search", url: "#", icon: Search },
   { title: "Settings", url: "#", icon: Settings },
 ];
 
@@ -56,7 +60,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    render={<Link to={item.url} />}
+                  >
                     <a href={item.url} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>

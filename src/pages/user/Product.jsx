@@ -16,8 +16,8 @@ import api from "@/services/api.js";
 
 const _initForm = {
   id: null,
-  name: "",
   category_id: "",
+  name: "",
   price: "",
   stock: "",
   description: "",

@@ -6,6 +6,7 @@ import ListUser from "./pages/user/List";
 import CategoryPage from "./pages/user/Category"; // Sesuaikan folder jika berada di luar folder user
 import Product from "./pages/user/Product"; // Sesuaikan folder jika berada di luar folder user
 import ListTransaction from "./pages/transaction/List";
+import FormTransaction from "./pages/transaction/Form";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/products" element={<Product />} />
           <Route path="/transaction" element={<ListTransaction />} />
+          <Route path="/transaction/create" element={<FormTransaction />} />
         </Route>
 
         {/* Catch-all jika rute tidak ditemukan, kembalikan ke login */}
@@ -34,34 +36,6 @@ function App() {
 }
 
 export default App;
-// import Login from "./pages/Login";
-// import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-// import Dashboard from "./pages/Dashboard";
-// import MainLayout from "./pages/MainLayout";
-// import ListUser from "./pages/user/List";
-// import CategoryPage from "./pages/user/Category";
-// import Product from "./pages/user/Product";
-// import ListTransaction from "./pages/transaction/List";
-
-// function App() {
-//   return (
-//     <BrowserRouter>
-//       <Routes>
-//         <Route path="/" element={<Login />} />
-//         <Route element={<MainLayout />}>
-//           <Route path="/dashboard" element={<Dashboard />} />
-//           <Route path="/users" element={<ListUser />} />
-//           <Route path="/category" element={<CategoryPage />} />
-//           <Route path="/products" element={<Product />} />
-//           <Route path="/transaction" element={<ListTransaction />} />
-//         </Route>
-//         <Route path="/login" element={<Navigate to="/login" replace />} />
-//       </Routes>
-//     </BrowserRouter>
-//   );
-// }
-
-// export default App;
 
 // // useState adalah hook yang digunakan untuk membuat state di dalam function component.
 // // State adalah ngerubah data jadi dinamis dengan aksi/event, misalnya data yang bisa berubah-ubah.
