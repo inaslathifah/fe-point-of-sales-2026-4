@@ -20,18 +20,16 @@ const _initForm = {
   name: "",
   price: "",
   stock: "",
-  description: "",
-  is_active: "1", // Sesuaikan dengan tipe data status Anda (misal: "1" atau "0" / true atau false)
+  is_active: "", // Sesuaikan dengan tipe data status Anda (misal: "1" atau "0" / true atau false)
 };
 
 const formatRupiah = (value) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-    maximumFractionDigits: 0,
   }).format(value);
 
-const Product = () => {
+const Products = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState(_initForm);
@@ -40,7 +38,7 @@ const Product = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/product");
+      const response = await api.get("/products");
       setProducts(response.data);
     } catch (error) {
       console.log(error.message);
@@ -79,7 +77,6 @@ const Product = () => {
       category_id: product.category_id || product.category || "",
       price: product.price || "",
       stock: product.stock || "",
-      description: product.description || "",
       is_active: product.is_active ?? product.status ?? "1",
     });
     setIsEdit(true);
@@ -110,21 +107,21 @@ const Product = () => {
         category_id: formData.category_id,
         price: formData.price,
         stock: formData.stock,
-        status: formData.status,
         is_active: parseInt(formData.is_active),
       };
 
       if (isEdit) {
-        await api.put(`/product/${formData.id}`, payload);
+        await api.put(`/products/${formData.id}`, payload);
       } else {
-        await api.post("/product", payload);
+        await api.post("/products", payload);
       }
       setFormData(_initForm);
-      setShowModal(false);
       fetchProducts();
     } catch (error) {
-      const errMsg = error.response?.data?.message || error.message;
+      const errMsg = error.message;
       console.log(errMsg);
+    } finally {
+      setShowModal(false);
     }
   };
 
@@ -133,7 +130,7 @@ const Product = () => {
       "Are you sure want to delete this data?",
     );
     if (confirmation) {
-      await api.delete(`/product/${id}`);
+      await api.delete(`/products/${id}`);
       fetchProducts();
     }
   };
@@ -161,7 +158,6 @@ const Product = () => {
                 <th className="px-6 py-3 font-medium">Category</th>
                 <th className="px-6 py-3 font-medium">Price</th>
                 <th className="px-6 py-3 font-medium">Stock</th>
-                <th className="px-6 py-3 font-medium">Status</th>
                 <th className="px-6 py-3 font-medium">Action</th>
               </tr>
             </thead>
@@ -221,7 +217,7 @@ const Product = () => {
 
       <AppModal
         show={showModal}
-        onclose={handleCloseModal}
+        onClose={handleCloseModal}
         title={isEdit ? "Edit Product" : "Create New Product"}
         onSubmit={handleSubmit}
         submitLabel={isEdit ? "Save Changes" : "Save"}
@@ -299,7 +295,7 @@ const Product = () => {
 
           {/* Select Status */}
           <div className="space-y-2">
-            <Label htmlFor="is_active">Status</Label>
+            <Label htmlFor="is_active">Action</Label>
             <Select
               id="is_active"
               name="is_active"
@@ -307,7 +303,7 @@ const Product = () => {
               onValueChange={(value) => handleSelectChange("is_active", value)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
+                <SelectValue placeholder="Select Action" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -323,4 +319,4 @@ const Product = () => {
   );
 };
 
-export default Product;
+export default Products;

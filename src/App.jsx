@@ -4,9 +4,10 @@ import Dashboard from "./pages/Dashboard";
 import MainLayout from "./pages/MainLayout";
 import ListUser from "./pages/user/List";
 import CategoryPage from "./pages/user/Category"; // Sesuaikan folder jika berada di luar folder user
-import Product from "./pages/user/Product"; // Sesuaikan folder jika berada di luar folder user
+import Products from "./pages/user/Product"; // Sesuaikan folder jika berada di luar folder user
 import ListTransaction from "./pages/transaction/List";
 import FormTransaction from "./pages/transaction/Form";
+import PrintTransaction from "@/pages/transaction/Print";
 
 function App() {
   return (
@@ -23,9 +24,10 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<ListUser />} />
           <Route path="/category" element={<CategoryPage />} />
-          <Route path="/products" element={<Product />} />
+          <Route path="/products" element={<Products />} />
           <Route path="/transaction" element={<ListTransaction />} />
           <Route path="/transaction/create" element={<FormTransaction />} />
+          <Route path="/transaction/print" element={<PrintTransaction />} />
         </Route>
 
         {/* Catch-all jika rute tidak ditemukan, kembalikan ke login */}

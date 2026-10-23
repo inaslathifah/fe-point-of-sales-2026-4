@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -19,23 +20,16 @@ import {
 } from "@/component/ui/select";
 
 const FormTransaction = () => {
-  const _initForm = {
-    id: null,
-    name: "",
-    email: "",
-    password: "",
-    is_active: 1,
-  };
+  const navigate = useNavigate();
+
   const [cart, setCart] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [cashAmount, setCashAmount] = useState("cash");
+  const [cashAmount, setCashAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [product, setProducts] = useState([]);
-  const [formData, setFormData] = useState(_initForm);
-  const [isEdit, setIsEdit] = useState(false);
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/product");
+      const response = await api.get("/products");
       setProducts(response.data);
     } catch (error) {
       console.log(error.message);
@@ -52,7 +46,7 @@ const FormTransaction = () => {
       if (ext) {
         if (ext.qty >= product.stock) return prev;
         return prev.map((item) => {
-          return item.id === product.id ? { ...item, qty: item.qty + 1 } : item;
+          item.id === product.id ? { ...item, qty: item.qty + 1 } : item;
         });
       }
       return [...prev, { ...product, qty: 1 }];
@@ -63,12 +57,12 @@ const FormTransaction = () => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const updateQty = (id, qty) => {
+  const updateQty = (id, delta) => {
     setCart((prev) => {
-      return prev
+      prev
         .map((item) => {
           if (item.id === id) {
-            const nextQty = item.qty + qty;
+            const nextQty = item.qty + delta;
             return nextQty > 0 && nextQty <= item.stock
               ? { ...item, qty: nextQty }
               : item;
@@ -79,60 +73,48 @@ const FormTransaction = () => {
     });
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
+  const tax_rate = 0.1;
+  const totalAmount = cart.reduce(
+    (acc, item) => acc + item.price * item.qty,
+    0,
+  );
+  const tax = Math.round(totalAmount * tax_rate);
+  const total = totalAmount + tax;
+  const change = Number(cashAmount) - total;
 
-  const handleShowModal = () => {
-    setShowModal(true);
-    setFormData(_initForm);
-    setIsEdit(false);
-  };
-
-  const handleEditModal = (user) => {
-    setShowModal(true);
-    setIsEdit(true);
-    setFormData({ ...user, password: "" });
-  };
-
-  const handleDelete = async (id) => {
-    const confirmation = window.confirm("Apa kamu yakin ingin menghapusnya?");
-    if (confirmation) {
-      await api.delete(`/user/${id}`);
-      fetchProducts();
-      // setTransactions(transactions.filter((u) => u.id !== id));
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleCheckout = async () => {
     try {
+      setLoading(true);
       const payload = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        is_active: parseInt(formData.is_active),
+        order_number: Date.now(),
+        payment_method: paymentMethod === "Cash" ? 2 : 1,
+        items: cart.map((item) => ({
+          product_id: item.id,
+          qty: item.qty,
+          price: item.price,
+        })),
+        subtotal: totalAmount,
+        pay: cashAmount,
+        tax: tax,
+        total: total,
       };
-      if (isEdit) {
-        await api.put(`/user/${formData.id}`, payload);
-      } else {
-        await api.post("/user", payload);
+      console.log(payload);
+      const response = await api.post("/transaction", payload);
+
+      if (!response.status) {
+        alert(response.message || "Failed process transaction");
+        return;
       }
-      setFormData(_initForm);
+
+      if (paymentMethod === "QRIS" && response.payment_gateway?.redirect_url) {
+        window.location.href = response.payment_gateway.redirect_url;
+        return;
+      }
+      navigate("/transaction/print");
     } catch (error) {
-      const errMsg = error.message;
-      console.log(errMsg);
+      console.log("error transaction order", error);
     } finally {
-      fetchProducts();
-      setShowModal(false);
+      setLoading(false);
     }
   };
 
@@ -224,13 +206,25 @@ const FormTransaction = () => {
                         size="sm"
                         className="h-6 w-6 p-0 text-xs text-rose-600 hover:text-rose-400 hover:bg-red-200"
                       >
-                        X
+                        x
                       </Button>
                     </div>
                   </div>
                 ))}
               </div>
-              {paymentMethod === "cash" && (
+              <div className="space-y-1">
+                <Label className="text-sm">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger id="payment" className="h-8 text-xs w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cash">Cash</SelectItem>
+                    <SelectItem value="QRIS">QRIS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {paymentMethod === "Cash" && (
                 <div className="space-y-1">
                   <Label className="text-xs">Pay</Label>
                   <Input
@@ -246,17 +240,48 @@ const FormTransaction = () => {
               )}
               <div className="space-y-1.5 pt-3 border-t text-xs">
                 <div className="flex justify-between font-semibold text-sm">
+                  <span>Subtotal</span>
+                  <span>
+                    {Number(totalAmount).toLocaleString("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold text-sm">
+                  <span>Tax (10%)</span>
+                  <span>
+                    {Number(tax).toLocaleString("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                    })}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold text-sm">
                   <span>Total</span>
-                  <span>Rp 100.000</span>
+                  <span>
+                    {Number(total).toLocaleString("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                    })}
+                  </span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Change</span>
-                  <span>Rp 100.000</span>
+                  <span>
+                    {Number(change).toLocaleString("id-ID", {
+                      style: "currency",
+                      currency: "IDR",
+                    })}
+                  </span>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="p-4 border-t">
-              <Button className="w-full text-xs font-semibold">
+              <Button
+                onClick={handleCheckout}
+                className="w-full text-xs font-semibold"
+              >
                 {loading ? "Loading..." : "Save Transaction"}
               </Button>
             </CardFooter>
